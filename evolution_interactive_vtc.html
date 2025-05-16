@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Évolution des indicateurs VTC (2021-2024)</title>
+    
+    <!-- ============================================================
+    BIBLIOTHÈQUES EXTERNES
+    - DSFR : Système de design de l'État français (police Marianne)
+    - Plotly.js : Bibliothèque de visualisation de données interactive
+    - noUiSlider : Composant de sélection de plage par glissement
+    ============================================================= -->
+    
+    <!-- Import de la police Marianne -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.7.2/dist/dsfr.min.css">
+    
+    <!-- Plotly JS pour les graphiques -->
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    
+    <!-- noUiSlider pour le sélecteur de période -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+    
+    <!-- ============================================================
+    STYLES CSS 
+    Organisation des styles par composants :
+    - Styles globaux (body, conteneurs)
+    - Contrôles et filtres
+    - Sliders et périodes
+    - Boutons et interactions
+    - Graphiques et visualisations
+    - Tableaux de données
+    ============================================================= -->
+    <style>
+        /* Styles généraux */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Marianne', system-ui, -apple-system, sans-serif;
+            background-color: #ffffff;
+            overscroll-behavior: none;
+        }
+        
+        /* Conteneur principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: 'Marianne', Arial, sans-serif;
+        }
+        
+        /* En-tête et titre */
+        .title-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .title-container h1 {
+            color: #000091;
+            margin-bottom: 5px;
+        }
+        
+        .title-container .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* Disposition des contrôles */
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* Zone de contrôle encadrée */
+        .control-group {
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            width: calc(50% - 10px);
+            box-sizing: border-box;
+        }
+        
+        /* Adaptation aux écrans mobiles */
+        @media (max-width: 768px) {
+            .control-group {
+                width: 100%;
+            }
+        }
+        
+        .control-group h3 {
+            margin-top: 0;
+            color: #000091;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        /* Styles pour le slider de période */
+        .period-slider-container {
+            padding: 0 10px;
+            margin-bottom: 20px;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .slider-labels span {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .period-display {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #000091;
+        }
+        
+        /* Personnalisation du slider noUiSlider */
+        .noUi-connect {
+            background: #000091;
+        }
+        
+        .noUi-handle {
+            border-radius: 50%;
+            background-color: #fff;
+            box-shadow: 0 0 1px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.2);
+            border: 2px solid #000091;
+        }
+        
+        /* Styles des boutons */
+        .button-container {
+            text-align: center;
+        }
+        
+        button {
+            background-color: #000091;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Marianne', Arial, sans-serif;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        button.secondary {
+            background-color: #666;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .metrics-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .metric-btn {
+            padding: 8px 12px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        .metric-btn.active {
+            background-color: #000091;
+            color: white;
+        }
+        
+        .metric-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .toggle-group {
+            margin-top: 15px;
+        }
+        
+        .toggle-label {
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        
+        .platforms-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+        
+        .platform-group {
+            margin-bottom: 15px;
+        }
+        
+        .group-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .platform-selector {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .platform-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+        
+        label {
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        
+        #graph-container {
+            width: 100%;
+            min-height: 400px;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .methodology-box {
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #000091;
+            clear: both;
+        }
+        
+        .methodology-box h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #000091;
+            margin-bottom: 10px;
+        }
+        
+        .methodology-item {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        /* Styles pour le tableau de données */
+        .data-table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .data-table-container table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .data-table-container thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .data-table-container th {
+            background-color: #000091;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .data-table-container td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .data-table-container tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .data-table-container tr:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-container">
+            <h1>Évolution des indicateurs VTC (2021-2024)</h1>
+            <div class="subtitle">Analyse des performances par plateforme et période</div>
+        </div>
+        
+        <div class="controls-container">
+            <div class="control-group">
+                <h3>Période d'analyse</h3>
+                <div class="period-slider-container">
+                    <div id="period-slider"></div>
+                    <div class="slider-labels">
+                        <span>2021</span>
+                        <span>2022</span>
+                        <span>2023</span>
+                        <span>2024</span>
+                    </div>
+                    <div class="period-display" id="period-display">2021 - 2024</div>
+                </div>
+                <div class="button-container">
+                    <button id="reset-period">Réinitialiser la période</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Indicateurs à afficher</h3>
+                <div class="metrics-buttons">
+                    <div class="metric-btn active" data-metric="revenu_horaire_ajuste_pct">Revenu horaire ajusté</div>
+                    <div class="metric-btn" data-metric="revenu_horaire_brut_pct">Revenu horaire nominal</div>
+                    <div class="metric-btn" data-metric="duree_pct">Durée de course</div>
+                    <div class="metric-btn" data-metric="attente_pct">Temps d'attente</div>
+                </div>
+                <div class="toggle-group">
+                    <div style="margin-bottom: 10px;">
+                        <input type="checkbox" id="compare-metrics" />
+                        <span class="toggle-label">Comparer les indicateurs</span>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="multiple-metrics" />
+                        <span class="toggle-label">Sélection multiple d'indicateurs</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls-container">
+            <div class="control-group">
+                <h3>Plateformes participantes au dialogue social</h3>
+                <div class="platforms-container" id="participating-platforms">
+                    <!-- Sera rempli dynamiquement -->
+                </div>
+                <div class="button-container">
+                    <button id="select-all-participating">Tout sélectionner</button>
+                    <button id="deselect-all-participating" class="secondary">Tout désélectionner</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Plateformes non participantes au dialogue social</h3>
+                <div class="platforms-container" id="non-participating-platforms">
+                    <!-- Sera rempli dynamiquement -->
+                </div>
+                <div class="button-container">
+                    <button id="select-all-non-participating">Tout sélectionner</button>
+                    <button id="deselect-all-non-participating" class="secondary">Tout désélectionner</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="graph-container"></div>
+        
+        <div class="methodology-box">
+            <h3>Méthodologie</h3>
+            <div class="methodology-item">• Revenu horaire = revenu_moyen / (duree_moyenne / 60)</div>
+            <div class="methodology-item">• Revenu horaire ajusté = revenu nominal ajusté pour l'inflation</div>
+            <div class="methodology-item">• Coefficients d'inflation (base 2021): 2021=1.0, 2022=1.052, 2023=1.104, 2024=1.126</div>
+            <div class="methodology-item">• Inflation annuelle : 2020=0.5%, 2021=1.6%, 2022=5.2%, 2023=4.9%, 2024=2.0%</div>
+            <div class="methodology-item">• Source : données compilées et analysées par l'ARPE, provenant des plateformes</div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration des couleurs et des plateformes
+        const colors_vtc = {
+            'ALLO CAB':   '#556B2F',  // Vert profond
+            'BLACKLANE':  '#1C1C1C',  // Noir riche
+            'BOLT':       '#007C91',  // Bleu profond
+            'CAO CAO':    '#00ACC1',  // Bleu-vert clair
+            'FREENOW':    '#90A4AE',  // Gris-bleu
+            'HEETCH':     '#6A1B9A',  // Violet profond
+            'LE CAB':     '#B74E23',  // Orange-brun
+            'MARCEL':     '#7B68EE',  // Violet
+            'SIXT RIDE':  '#FF8C00',  // Orange
+            'UBER':       '#D4A017',  // Or
+            'MYSAM':      '#808180'   // Gris
+        };
+
+        // Définir les groupes de plateformes
+        const PF_participant_au_dialogue_social = ['ALLO CAB', 'BOLT', 'CAO CAO', 'FREENOW', 'HEETCH', 'LE CAB', 'MARCEL', 'UBER'];
+        const PF_non_participant_au_dialogue_social = ['BLACKLANE', 'MYSAM', 'SIXT RIDE'];
+        
+        // Données d'évolution annuelle
+        const yearly_evolution_vtc = [
+            { plateforme: 'ALLO CAB', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 0.8083832335329435, evol_duree_pct: -7.089552238805978, evol_attente_pct: null, evol_revenu_horaire_brut_pct: 8.500589183079649, evol_revenu_horaire_ajuste_pct: 3.1374421892391915, period: '2021-2022' },
+            { plateforme: 'ALLO CAB', de_annee: 2022, a_annee: 2023, evol_revenu_pct: 10.00891000891, evol_duree_pct: 3.61445783132531, evol_attente_pct: 0.0, evol_revenu_horaire_brut_pct: 6.171389892320097, evol_revenu_horaire_ajuste_pct: 1.2120018039276657, period: '2022-2023' },
+            { plateforme: 'ALLO CAB', de_annee: 2023, a_annee: 2024, evol_revenu_pct: 4.778617710583162, evol_duree_pct: 2.325581395348829, evol_attente_pct: 0.0, evol_revenu_horaire_brut_pct: 2.3972854898881004, evol_revenu_horaire_ajuste_pct: 0.3894955783216627, period: '2023-2024' },
+            { plateforme: 'BLACKLANE', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 20.850847025856563, evol_duree_pct: 1.6688299647691425, evol_attente_pct: null, evol_revenu_horaire_brut_pct: 18.867156303199785, evol_revenu_horaire_ajuste_pct: 12.991593444106254, period: '2021-2022' },
+            { plateforme: 'BLACKLANE', de_annee: 2022, a_annee: 2023, evol_revenu_pct: 1.7706576728499228, evol_duree_pct: -2.2797738464344337, evol_attente_pct: null, evol_revenu_horaire_brut_pct: 4.1449264688757275, evol_revenu_horaire_ajuste_pct: -0.7198031755236016, period: '2022-2023' },
+            { plateforme: 'BOLT', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 6.666666666666668, evol_duree_pct: -7.168949771689499, evol_attente_pct: 36.065573770491824, evol_revenu_horaire_brut_pct: 14.904082636497787, evol_revenu_horaire_ajuste_pct: 9.224413152564425, period: '2021-2022' },
+            { plateforme: 'BOLT', de_annee: 2022, a_annee: 2023, evol_revenu_pct: 5.023364485981305, evol_duree_pct: 6.984751598622734, evol_attente_pct: 22.891566265060224, evol_revenu_horaire_brut_pct: -1.833333333333332, evol_revenu_horaire_ajuste_pct: -6.418811566571321, period: '2022-2023' },
+            { plateforme: 'BOLT', de_annee: 2023, a_annee: 2024, evol_revenu_pct: -8.398220244716361, evol_duree_pct: 1.8390804597701083, evol_attente_pct: 26.47058823529413, evol_revenu_horaire_brut_pct: -10.052428457001383, evol_revenu_horaire_ajuste_pct: -11.816106330393513, period: '2023-2024' },
+            { plateforme: 'CAO CAO', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 18.800000000000004, evol_duree_pct: -2.683363148479418, evol_attente_pct: -66.19915848527349, evol_revenu_horaire_brut_pct: 22.07573529411763, evol_revenu_horaire_ajuste_pct: 16.04157347349583, period: '2021-2022' },
+            { plateforme: 'CAO CAO', de_annee: 2022, a_annee: 2023, evol_revenu_pct: 33.89450056116722, evol_duree_pct: 18.566176470588232, evol_attente_pct: null, evol_revenu_horaire_brut_pct: 12.92807489189918, evol_revenu_horaire_ajuste_pct: 7.653074253478742, period: '2022-2023' },
+            { plateforme: 'CAO CAO', de_annee: 2023, a_annee: 2024, evol_revenu_pct: 19.69823973176865, evol_duree_pct: 15.116279069767435, evol_attente_pct: null, evol_revenu_horaire_brut_pct: 3.9802890599202474, evol_revenu_horaire_ajuste_pct: 1.9414598626669117, period: '2023-2024' },
+            { plateforme: 'FREENOW', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 9.67741935483871, evol_duree_pct: 3.2863849765258184, evol_attente_pct: 48.113207547169814, evol_revenu_horaire_brut_pct: 6.187683284457476, evol_revenu_horaire_ajuste_pct: 0.9388624376972166, period: '2021-2022' },
+            { plateforme: 'FREENOW', de_annee: 2022, a_annee: 2023, evol_revenu_pct: -28.235294117647065, evol_duree_pct: 9.545454545454552, evol_attente_pct: 22.929936305732493, evol_revenu_horaire_brut_pct: -34.48865023187698, evol_revenu_horaire_ajuste_pct: -37.548760945545254, period: '2022-2023' },
+            { plateforme: 'FREENOW', de_annee: 2023, a_annee: 2024, evol_revenu_pct: 88.52459016393443, evol_duree_pct: 10.373443983402488, evol_attente_pct: -31.606217616580317, evol_revenu_horaire_brut_pct: 70.80611364476768, evol_revenu_horaire_ajuste_pct: 67.45697416153693, period: '2023-2024' },
+            { plateforme: 'HEETCH', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 7.69230769230769, evol_duree_pct: 9.523809523809524, evol_attente_pct: 5.71428571428572, evol_revenu_horaire_brut_pct: -1.6722408026755846, evol_revenu_horaire_ajuste_pct: -6.532548291516721, period: '2021-2022' },
+            { plateforme: 'HEETCH', de_annee: 2022, a_annee: 2023, evol_revenu_pct: -16.233766233766232, evol_duree_pct: 0.0, evol_attente_pct: 45.94594594594595, evol_revenu_horaire_brut_pct: -16.233766233766247, evol_revenu_horaire_ajuste_pct: -20.146583635620814, period: '2022-2023' },
+            { plateforme: 'HEETCH', de_annee: 2023, a_annee: 2024, evol_revenu_pct: -18.6046511627907, evol_duree_pct: 0.0, evol_attente_pct: 21.296296296296287, evol_revenu_horaire_brut_pct: -18.6046511627907, evol_revenu_horaire_ajuste_pct: -20.20063839489285, period: '2023-2024' },
+            { plateforme: 'LE CAB', de_annee: 2022, a_annee: 2023, evol_revenu_pct: -2.5974025974025974, evol_duree_pct: 3.0303030303030303, evol_attente_pct: -4.761904761904762, evol_revenu_horaire_brut_pct: -5.462184873949565, evol_revenu_horaire_ajuste_pct: -9.878155265919492, period: '2022-2023' },
+            { plateforme: 'LE CAB', de_annee: 2023, a_annee: 2024, evol_revenu_pct: 2.933333333333337, evol_duree_pct: 0.0, evol_attente_pct: 0.0, evol_revenu_horaire_brut_pct: 2.933333333333306, evol_revenu_horaire_ajuste_pct: 0.9150326797385332, period: '2023-2024' },
+            { plateforme: 'MARCEL', de_annee: 2022, a_annee: 2023, evol_revenu_pct: 0.261780104712027, evol_duree_pct: 0.0, evol_attente_pct: -21.428571428571427, evol_revenu_horaire_brut_pct: 0.26178010471200835, evol_revenu_horaire_ajuste_pct: -4.421563293887486, period: '2022-2023' },
+            { plateforme: 'SIXT RIDE', de_annee: 2023, a_annee: 2024, evol_revenu_pct: -10.670364118639974, evol_duree_pct: -6.493506493506493, evol_attente_pct: null, evol_revenu_horaire_brut_pct: -4.4669171824344245, evol_revenu_horaire_ajuste_pct: -6.340114884739637, period: '2023-2024' },
+            { plateforme: 'UBER', de_annee: 2021, a_annee: 2022, evol_revenu_pct: 10.389610389610388, evol_duree_pct: 2.5, evol_attente_pct: 0.0, evol_revenu_horaire_brut_pct: 7.697180867912556, evol_revenu_horaire_ajuste_pct: 2.373746072160214, period: '2021-2022' },
+            { plateforme: 'UBER', de_annee: 2022, a_annee: 2023, evol_revenu_pct: 7.647058823529417, evol_duree_pct: 2.9268292682926895, evol_attente_pct: 75.0, evol_revenu_horaire_brut_pct: 4.586005018121007, evol_revenu_horaire_ajuste_pct: -0.2993279140886299, period: '2022-2023' },
+            { plateforme: 'UBER', de_annee: 2023, a_annee: 2024, evol_revenu_pct: -4.371584699453555, evol_duree_pct: 0.9478672985781956, evol_attente_pct: 42.857142857142854, evol_revenu_horaire_brut_pct: -5.2695040919469545, evol_revenu_horaire_ajuste_pct: -7.126964796026439, period: '2023-2024' }
+        ];
+        
+        // Données d'évolution totale
+        const total_evolution = [
+            { plateforme: 'ALLO CAB', premiere_annee: 2021, derniere_annee: 2024, evol_totale_revenu_pct: 16.197604790419174, evol_totale_duree_pct: -1.4925373134328437, evol_totale_attente_pct: null, evol_totale_revenu_horaire_brut_pct: 17.958174559970985, evol_totale_revenu_horaire_ajuste_pct: 4.794054428481718 },
+            { plateforme: 'BLACKLANE', premiere_annee: 2021, derniere_annee: 2023, evol_totale_revenu_pct: 22.990701821424018, evol_totale_duree_pct: -0.6489894307435591, evol_totale_attente_pct: null, evol_totale_revenu_horaire_brut_pct: 23.794112527611, evol_totale_revenu_horaire_ajuste_pct: 12.178276366420858 },
+            { plateforme: 'BOLT', premiere_annee: 2021, derniere_annee: 2024, evol_totale_revenu_pct: 2.6168224299065304, evol_totale_duree_pct: 1.1415525114155252, evol_totale_attente_pct: 111.47540983606558, evol_totale_revenu_horaire_brut_pct: 1.4586190164764474, evol_totale_revenu_horaire_ajuste_pct: -9.864152415772692 },
+            { plateforme: 'CAO CAO', premiere_annee: 2021, derniere_annee: 2024, evol_totale_revenu_pct: 90.39999999999999, evol_totale_duree_pct: 32.826475849731665, evol_totale_attente_pct: null, evol_totale_revenu_horaire_brut_pct: 43.344915824915816, evol_totale_revenu_horaire_ajuste_pct: 27.347637983030975 },
+            { plateforme: 'FREENOW', premiere_annee: 2021, derniere_annee: 2024, evol_totale_revenu_pct: 48.38709677419355, evol_totale_duree_pct: 24.882629107981224, evol_totale_attente_pct: 24.528301886792452, evol_totale_revenu_horaire_brut_pct: 18.821246665049735, evol_totale_revenu_horaire_ajuste_pct: 5.560807775527997 },
+            { plateforme: 'HEETCH', premiere_annee: 2021, derniere_annee: 2024, evol_totale_revenu_pct: -26.573426573426577, evol_totale_duree_pct: 9.523809523809524, evol_totale_attente_pct: 87.14285714285714, evol_totale_revenu_horaire_brut_pct: -32.958346001824275, evol_totale_revenu_horaire_ajuste_pct: -40.44018768289428 },
+            { plateforme: 'LE CAB', premiere_annee: 2022, derniere_annee: 2024, evol_totale_revenu_pct: 0.25974025974026343, evol_totale_duree_pct: 3.0303030303030303, evol_totale_attente_pct: -4.761904761904762, evol_totale_revenu_horaire_brut_pct: -2.6890756302521117, evol_totale_revenu_horaire_ajuste_pct: -9.053510935019435 },
+            { plateforme: 'MARCEL', premiere_annee: 2022, derniere_annee: 2023, evol_totale_revenu_pct: 0.261780104712027, evol_totale_duree_pct: 0.0, evol_totale_attente_pct: -21.428571428571427, evol_totale_revenu_horaire_brut_pct: 0.26178010471200835, evol_totale_revenu_horaire_ajuste_pct: -4.421563293887486 },
+            { plateforme: 'SIXT RIDE', premiere_annee: 2023, derniere_annee: 2024, evol_totale_revenu_pct: -10.670364118639974, evol_totale_duree_pct: -6.493506493506493, evol_totale_attente_pct: null, evol_totale_revenu_horaire_brut_pct: -4.4669171824344245, evol_totale_revenu_horaire_ajuste_pct: -6.340114884739637 },
+            { plateforme: 'UBER', premiere_annee: 2021, derniere_annee: 2024, evol_totale_revenu_pct: 13.636363636363633, evol_totale_duree_pct: 6.500000000000003, evol_totale_attente_pct: 150.0, evol_totale_revenu_horaire_brut_pct: 6.700810926163024, evol_totale_revenu_horaire_ajuste_pct: -5.206988583274201 }
+        ];
+        
+        // Définir les noms lisibles par l'utilisateur pour les métriques
+        const metricNames = {
+            'revenu_horaire_ajuste_pct': 'Revenu horaire ajusté',
+            'revenu_horaire_brut_pct': 'Revenu horaire nominal',
+            'duree_pct': 'Durée course',
+            'attente_pct': 'Temps d\'attente'
+        };
+
+        // Tableau pour stocker les métriques multiples sélectionnées
+        let selectedMetrics = ['revenu_horaire_ajuste_pct'];
+
+        // État global pour le graphique
+        let state = {
+            selectedMetric: 'revenu_horaire_ajuste_pct',
+            startYear: 2021,
+            endYear: 2024,
+            compareMetrics: false,
+            multipleMetrics: false,
+            selectedPlatforms: [...PF_participant_au_dialogue_social, ...PF_non_participant_au_dialogue_social]
+        };
+
+        // Variables pour les éléments du DOM
+        let periodSlider;
+        let graphContainer = document.getElementById('graph-container');
+        
+        // Données des valeurs par plateforme et année
+        const resume_table_vtc = [
+            {plateforme: "ALLO CAB", annee: 2021, periode: "T4", revenu_moyen: 33.4, duree_moyenne: 26.8, temps_attente: null, revenu_horaire_brut: 74.78, revenu_horaire_ajuste: 74.78},
+            {plateforme: "ALLO CAB", annee: 2022, periode: "", revenu_moyen: 33.67, duree_moyenne: 24.9, temps_attente: 0.5, revenu_horaire_brut: 81.13, revenu_horaire_ajuste: 77.12},
+            {plateforme: "ALLO CAB", annee: 2023, periode: "", revenu_moyen: 37.04, duree_moyenne: 25.8, temps_attente: 0.5, revenu_horaire_brut: 86.14, revenu_horaire_ajuste: 78.06},
+            {plateforme: "ALLO CAB", annee: 2024, periode: "", revenu_moyen: 38.81, duree_moyenne: 26.4, temps_attente: 0.5, revenu_horaire_brut: 88.2, revenu_horaire_ajuste: 78.36},
+            {plateforme: "BLACKLANE", annee: 2021, periode: "T4", revenu_moyen: 78.51, duree_moyenne: 53.93, temps_attente: null, revenu_horaire_brut: 87.35, revenu_horaire_ajuste: 87.35},
+            {plateforme: "BLACKLANE", annee: 2022, periode: "", revenu_moyen: 94.88, duree_moyenne: 54.83, temps_attente: null, revenu_horaire_brut: 103.83, revenu_horaire_ajuste: 98.69},
+            {plateforme: "BLACKLANE", annee: 2023, periode: "", revenu_moyen: 96.56, duree_moyenne: 53.58, temps_attente: null, revenu_horaire_brut: 108.13, revenu_horaire_ajuste: 97.98},
+            {plateforme: "BOLT", annee: 2021, periode: "T4", revenu_moyen: 16.05, duree_moyenne: 21.9, temps_attente: 6.1, revenu_horaire_brut: 43.97, revenu_horaire_ajuste: 43.97},
+            {plateforme: "BOLT", annee: 2022, periode: "", revenu_moyen: 17.12, duree_moyenne: 20.33, temps_attente: 8.3, revenu_horaire_brut: 50.53, revenu_horaire_ajuste: 48.03},
+            {plateforme: "BOLT", annee: 2023, periode: "", revenu_moyen: 17.98, duree_moyenne: 21.75, temps_attente: 10.2, revenu_horaire_brut: 49.6, revenu_horaire_ajuste: 44.95},
+            {plateforme: "BOLT", annee: 2024, periode: "", revenu_moyen: 16.47, duree_moyenne: 22.15, temps_attente: 12.9, revenu_horaire_brut: 44.61, revenu_horaire_ajuste: 39.64},
+            {plateforme: "CAO CAO", annee: 2021, periode: "T4", revenu_moyen: 15.0, duree_moyenne: 22.36, temps_attente: 28.52, revenu_horaire_brut: 40.25, revenu_horaire_ajuste: 40.25},
+            {plateforme: "CAO CAO", annee: 2022, periode: "", revenu_moyen: 17.82, duree_moyenne: 21.76, temps_attente: 9.64, revenu_horaire_brut: 49.14, revenu_horaire_ajuste: 46.71},
+            {plateforme: "CAO CAO", annee: 2023, periode: "", revenu_moyen: 23.86, duree_moyenne: 25.8, temps_attente: null, revenu_horaire_brut: 55.49, revenu_horaire_ajuste: 50.28},
+            {plateforme: "CAO CAO", annee: 2024, periode: "", revenu_moyen: 28.56, duree_moyenne: 29.7, temps_attente: null, revenu_horaire_brut: 57.7, revenu_horaire_ajuste: 51.26},
+            {plateforme: "FREENOW", annee: 2021, periode: "T4", revenu_moyen: 15.5, duree_moyenne: 21.3, temps_attente: 10.6, revenu_horaire_brut: 43.66, revenu_horaire_ajuste: 43.66},
+            {plateforme: "FREENOW", annee: 2022, periode: "", revenu_moyen: 17.0, duree_moyenne: 22.0, temps_attente: 15.7, revenu_horaire_brut: 46.36, revenu_horaire_ajuste: 44.07},
+            {plateforme: "FREENOW", annee: 2023, periode: "", revenu_moyen: 12.2, duree_moyenne: 24.1, temps_attente: 19.3, revenu_horaire_brut: 30.37, revenu_horaire_ajuste: 27.52},
+            {plateforme: "FREENOW", annee: 2024, periode: "", revenu_moyen: 23.0, duree_moyenne: 26.6, temps_attente: 13.2, revenu_horaire_brut: 51.88, revenu_horaire_ajuste: 46.09},
+            {plateforme: "HEETCH", annee: 2021, periode: "T4", revenu_moyen: 14.3, duree_moyenne: 21.0, temps_attente: 7.0, revenu_horaire_brut: 40.86, revenu_horaire_ajuste: 40.86},
+            {plateforme: "HEETCH", annee: 2022, periode: "", revenu_moyen: 15.4, duree_moyenne: 23.0, temps_attente: 7.4, revenu_horaire_brut: 40.17, revenu_horaire_ajuste: 38.19},
+            {plateforme: "HEETCH", annee: 2023, periode: "", revenu_moyen: 12.9, duree_moyenne: 23.0, temps_attente: 10.8, revenu_horaire_brut: 33.65, revenu_horaire_ajuste: 30.49},
+            {plateforme: "HEETCH", annee: 2024, periode: "", revenu_moyen: 10.5, duree_moyenne: 23.0, temps_attente: 13.1, revenu_horaire_brut: 27.39, revenu_horaire_ajuste: 24.33},
+            {plateforme: "LE CAB", annee: 2022, periode: "", revenu_moyen: 38.5, duree_moyenne: 33.0, temps_attente: 21.0, revenu_horaire_brut: 70.0, revenu_horaire_ajuste: 66.54},
+            {plateforme: "LE CAB", annee: 2023, periode: "", revenu_moyen: 37.5, duree_moyenne: 34.0, temps_attente: 20.0, revenu_horaire_brut: 66.18, revenu_horaire_ajuste: 59.97},
+            {plateforme: "LE CAB", annee: 2024, periode: "", revenu_moyen: 38.6, duree_moyenne: 34.0, temps_attente: 20.0, revenu_horaire_brut: 68.12, revenu_horaire_ajuste: 60.52},
+            {plateforme: "MARCEL", annee: 2022, periode: "", revenu_moyen: 38.2, duree_moyenne: 33.0, temps_attente: 28.0, revenu_horaire_brut: 69.45, revenu_horaire_ajuste: 66.02},
+            {plateforme: "MARCEL", annee: 2023, periode: "", revenu_moyen: 38.3, duree_moyenne: 33.0, temps_attente: 22.0, revenu_horaire_brut: 69.64, revenu_horaire_ajuste: 63.1},
+            {plateforme: "MYSAM", annee: 2024, periode: "", revenu_moyen: 42.21, duree_moyenne: 20.49, temps_attente: null, revenu_horaire_brut: 123.6, revenu_horaire_ajuste: 109.81},
+            {plateforme: "SIXT RIDE", annee: 2023, periode: "", revenu_moyen: 82.94, duree_moyenne: 46.2, temps_attente: null, revenu_horaire_brut: 107.71, revenu_horaire_ajuste: 97.61},
+            {plateforme: "SIXT RIDE", annee: 2024, periode: "", revenu_moyen: 74.09, duree_moyenne: 43.2, temps_attente: null, revenu_horaire_brut: 102.9, revenu_horaire_ajuste: 91.42},
+            {plateforme: "UBER", annee: 2021, periode: "T4", revenu_moyen: 15.4, duree_moyenne: 20.0, temps_attente: 4.0, revenu_horaire_brut: 46.2, revenu_horaire_ajuste: 46.2},
+            {plateforme: "UBER", annee: 2022, periode: "", revenu_moyen: 17.0, duree_moyenne: 20.5, temps_attente: 4.0, revenu_horaire_brut: 49.76, revenu_horaire_ajuste: 47.3},
+            {plateforme: "UBER", annee: 2023, periode: "", revenu_moyen: 18.3, duree_moyenne: 21.1, temps_attente: 7.0, revenu_horaire_brut: 52.04, revenu_horaire_ajuste: 47.16},
+            {plateforme: "UBER", annee: 2024, periode: "", revenu_moyen: 17.5, duree_moyenne: 21.3, temps_attente: 10.0, revenu_horaire_brut: 49.3, revenu_horaire_ajuste: 43.79}
+        ];
+        
+        // Fonction d'initialisation des checkboxes des plateformes
+        function initPlatformCheckboxes() {
+            console.log("Initialisation des checkboxes des plateformes");
+            
+            // Initialiser les plateformes participantes
+            const participatingContainer = document.getElementById('participating-platforms');
+            if (!participatingContainer) {
+                console.error("Conteneur des plateformes participantes non trouvé");
+                return;
+            }
+            
+            participatingContainer.innerHTML = '';
+            
+            // Grouper par année de début
+            const platformsByStartYear = {};
+            
+            PF_participant_au_dialogue_social.forEach(platform => {
+                // Trouver la première année disponible pour cette plateforme
+                const platformData = total_evolution.find(d => d.plateforme === platform);
+                let startYear = 2021; // Par défaut
+                
+                if (platformData) {
+                    startYear = platformData.premiere_annee;
+                }
+                
+                if (!platformsByStartYear[startYear]) {
+                    platformsByStartYear[startYear] = [];
+                }
+                
+                platformsByStartYear[startYear].push(platform);
+            });
+            
+            // Créer les checkboxes par groupe d'année de début
+            Object.keys(platformsByStartYear).sort().forEach(year => {
+                const platforms = platformsByStartYear[year];
+                
+                const yearGroup = document.createElement('div');
+                yearGroup.className = 'platform-group';
+                yearGroup.innerHTML = `<div class="group-title">Depuis ${year}</div>`;
+                
+                platforms.sort().forEach(platform => {
+                    const platformColor = colors_vtc[platform] || '#000000';
+                    const platformSelector = document.createElement('div');
+                    platformSelector.className = 'platform-selector';
+                    platformSelector.innerHTML = `
+                        <input type="checkbox" id="platform-${platform.replace(/\s+/g, '-')}" 
+                               data-platform="${platform}" checked>
+                        <span class="platform-color" style="background-color: ${platformColor};"></span>
+                        <label for="platform-${platform.replace(/\s+/g, '-')}">${platform}</label>
+                    `;
+                    yearGroup.appendChild(platformSelector);
+                });
+                
+                participatingContainer.appendChild(yearGroup);
+            });
+            
+            // Initialiser les plateformes non participantes
+            const nonParticipatingContainer = document.getElementById('non-participating-platforms');
+            if (!nonParticipatingContainer) {
+                console.error("Conteneur des plateformes non participantes non trouvé");
+                return;
+            }
+            
+            nonParticipatingContainer.innerHTML = '';
+            
+            // Grouper par année de début également
+            const nonPartPlatformsByStartYear = {};
+            
+            PF_non_participant_au_dialogue_social.forEach(platform => {
+                // Trouver la première année disponible pour cette plateforme
+                const platformData = total_evolution.find(d => d.plateforme === platform);
+                let startYear = 2021; // Par défaut
+                
+                if (platformData) {
+                    startYear = platformData.premiere_annee;
+                }
+                
+                if (!nonPartPlatformsByStartYear[startYear]) {
+                    nonPartPlatformsByStartYear[startYear] = [];
+                }
+                
+                nonPartPlatformsByStartYear[startYear].push(platform);
+            });
+            
+            // Créer les checkboxes par groupe d'année de début
+            Object.keys(nonPartPlatformsByStartYear).sort().forEach(year => {
+                const platforms = nonPartPlatformsByStartYear[year];
+                
+                const yearGroup = document.createElement('div');
+                yearGroup.className = 'platform-group';
+                yearGroup.innerHTML = `<div class="group-title">Depuis ${year}</div>`;
+                
+                platforms.sort().forEach(platform => {
+                    const platformColor = colors_vtc[platform] || '#000000';
+                    const platformSelector = document.createElement('div');
+                    platformSelector.className = 'platform-selector';
+                    platformSelector.innerHTML = `
+                        <input type="checkbox" id="platform-${platform.replace(/\s+/g, '-')}" 
+                               data-platform="${platform}" checked>
+                        <span class="platform-color" style="background-color: ${platformColor};"></span>
+                        <label for="platform-${platform.replace(/\s+/g, '-')}">${platform}</label>
+                    `;
+                    yearGroup.appendChild(platformSelector);
+                });
+                
+                nonParticipatingContainer.appendChild(yearGroup);
+            });
+            
+            // Ajouter les événements aux checkboxes
+            document.querySelectorAll('.platform-selector input').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    console.log("Changement de sélection de plateforme:", this.getAttribute('data-platform'), this.checked);
+                    
+                    const platform = this.getAttribute('data-platform');
+                    
+                    if (this.checked) {
+                        if (!state.selectedPlatforms.includes(platform)) {
+                            state.selectedPlatforms.push(platform);
+                        }
+                    } else {
+                        state.selectedPlatforms = state.selectedPlatforms.filter(p => p !== platform);
+                    }
+                    
+                    updateGraph();
+                });
+            });
+        }
+        
+        // Fonction pour initialiser le slider de période
+        function initPeriodSlider() {
+            const sliderElement = document.getElementById('period-slider');
+            
+            noUiSlider.create(sliderElement, {
+                start: [2021, 2024],
+                connect: true,
+                step: 1,
+                range: {
+                    'min': 2021,
+                    'max': 2024
+                },
+                format: {
+                    to: value => Math.round(value),
+                    from: value => Math.round(value)
+                }
+            });
+            
+            periodSlider = sliderElement.noUiSlider;
+            
+            // Mettre à jour l'affichage de la période sélectionnée
+            const periodDisplay = document.getElementById('period-display');
+            
+            periodSlider.on('update', function(values, handle) {
+                const [startYear, endYear] = values.map(Number);
+                state.startYear = startYear;
+                state.endYear = endYear;
+                periodDisplay.textContent = `${startYear} - ${endYear}`;
+            });
+            
+            periodSlider.on('change', function() {
+                updateGraph();
+            });
+            
+            // Réinitialiser le slider
+            document.getElementById('reset-period').addEventListener('click', function() {
+                console.log("Réinitialisation de la période");
+                
+                if (periodSlider) {
+                    periodSlider.set([2021, 2024]);
+                    updateGraph();
+                } else {
+                    console.error("Le slider de période n'est pas initialisé");
+                }
+            });
+        }
+        
+        // Fonction pour initialiser les boutons de métrique
+        function initMetricButtons() {
+            console.log("Initialisation des boutons de métrique");
+            
+            // Conteneur pour les boutons de métrique
+            const metricsContainer = document.querySelector('.metrics-buttons');
+            if (metricsContainer) {
+                metricsContainer.innerHTML = `
+                    <div class="metric-btn active" data-metric="revenu_horaire_ajuste_pct">Revenu horaire ajusté</div>
+                    <div class="metric-btn" data-metric="revenu_horaire_brut_pct">Revenu horaire nominal</div>
+                    <div class="metric-btn" data-metric="duree_pct">Durée de course</div>
+                    <div class="metric-btn" data-metric="attente_pct">Temps d'attente</div>
+                `;
+            }
+            
+            // Ajouter un nouveau bouton pour sélection multiple
+            const toggleGroup = document.querySelector('.toggle-group');
+            if (toggleGroup) {
+                toggleGroup.innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <input type="checkbox" id="compare-metrics" />
+                        <span class="toggle-label">Comparer les indicateurs</span>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="multiple-metrics" />
+                        <span class="toggle-label">Sélection multiple d'indicateurs</span>
+                    </div>
+                `;
+            }
+            
+            // Récupérer tous les boutons de métrique
+            const metricButtons = document.querySelectorAll('.metric-btn');
+            console.log("Boutons de métrique trouvés:", metricButtons.length);
+            
+            // Ajouter les écouteurs d'événements aux boutons
+            metricButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const metric = this.getAttribute('data-metric');
+                    console.log("Clic sur le bouton de métrique:", metric);
+                    
+                    if (state.multipleMetrics) {
+                        // Mode sélection multiple
+                        if (button.classList.contains('active')) {
+                            // Désélectionner la métrique si déjà active
+                            if (selectedMetrics.length > 1) { // Garder au moins une métrique sélectionnée
+                                button.classList.remove('active');
+                                selectedMetrics = selectedMetrics.filter(m => m !== metric);
+                            }
+                        } else {
+                            // Sélectionner la métrique
+                            button.classList.add('active');
+                            if (!selectedMetrics.includes(metric)) {
+                                selectedMetrics.push(metric);
+                            }
+                        }
+                    } else {
+                        // Mode sélection unique
+                        metricButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        selectedMetrics = [metric];
+                        state.selectedMetric = metric;
+                    }
+                    
+                    // Désactiver la comparaison de métriques
+                    state.compareMetrics = false;
+                    document.getElementById('compare-metrics').checked = false;
+                    
+                    console.log("Métriques sélectionnées:", selectedMetrics);
+                    updateGraph();
+                });
+            });
+            
+            // Initialiser la case à cocher pour comparer les métriques
+            const compareCheckbox = document.getElementById('compare-metrics');
+            if (compareCheckbox) {
+                compareCheckbox.addEventListener('change', function() {
+                    console.log("Changement de l'état de comparaison:", this.checked);
+                    state.compareMetrics = this.checked;
+                    
+                    if (this.checked) {
+                        // En mode comparaison, on utilise toutes les métriques
+                        document.getElementById('multiple-metrics').checked = false;
+                        state.multipleMetrics = false;
+                        
+                        // Activer tous les boutons pour l'UI
+                        metricButtons.forEach(btn => btn.classList.add('active'));
+                        
+                        // Réinitialiser les métriques sélectionnées
+                        selectedMetrics = ['revenu_horaire_ajuste_pct', 'revenu_horaire_brut_pct', 'duree_pct', 'attente_pct'];
+                    } else {
+                        // Revenir à la sélection simple
+                        metricButtons.forEach(btn => {
+                            if (btn.getAttribute('data-metric') === state.selectedMetric) {
+                                btn.classList.add('active');
+                            } else {
+                                btn.classList.remove('active');
+                            }
+                        });
+                        
+                        selectedMetrics = [state.selectedMetric];
+                    }
+                    
+                    updateGraph();
+                });
+            }
+            
+            // Initialiser la case à cocher pour la sélection multiple
+            const multipleCheckbox = document.getElementById('multiple-metrics');
+            if (multipleCheckbox) {
+                multipleCheckbox.addEventListener('change', function() {
+                    console.log("Changement du mode sélection multiple:", this.checked);
+                    state.multipleMetrics = this.checked;
+                    
+                    if (this.checked) {
+                        // Désactiver la comparaison si active
+                        document.getElementById('compare-metrics').checked = false;
+                        state.compareMetrics = false;
+                        
+                        // En mode multiple, on garde la sélection active
+                        selectedMetrics = [state.selectedMetric];
+                        metricButtons.forEach(btn => {
+                            if (btn.getAttribute('data-metric') === state.selectedMetric) {
+                                btn.classList.add('active');
+                            } else {
+                                btn.classList.remove('active');
+                            }
+                        });
+                    } else {
+                        // Revenir à la sélection simple
+                        metricButtons.forEach(btn => {
+                            if (btn.getAttribute('data-metric') === state.selectedMetric) {
+                                btn.classList.add('active');
+                            } else {
+                                btn.classList.remove('active');
+                            }
+                        });
+                        
+                        selectedMetrics = [state.selectedMetric];
+                    }
+                    
+                    updateGraph();
+                });
+            }
+        }
+        
+        // Fonction pour initialiser les boutons de sélection de plateforme
+        function initSelectionButtons() {
+            console.log("Initialisation des boutons de sélection");
+            
+            // Sélection des plateformes participantes
+            const selectAllParticipating = document.getElementById('select-all-participating');
+            const deselectAllParticipating = document.getElementById('deselect-all-participating');
+            
+            if (selectAllParticipating) {
+                // Supprimer les écouteurs existants
+                const newButton = selectAllParticipating.cloneNode(true);
+                selectAllParticipating.parentNode.replaceChild(newButton, selectAllParticipating);
+                
+                // Ajouter le nouvel écouteur
+                document.getElementById('select-all-participating').addEventListener('click', function() {
+                    console.log("Sélection de toutes les plateformes participantes");
+                    
+                    document.querySelectorAll('#participating-platforms input').forEach(checkbox => {
+                        checkbox.checked = true;
+                        const platform = checkbox.getAttribute('data-platform');
+                        if (!state.selectedPlatforms.includes(platform)) {
+                            state.selectedPlatforms.push(platform);
+                        }
+                    });
+                    
+                    updateGraph();
+                });
+            }
+            
+            if (deselectAllParticipating) {
+                // Supprimer les écouteurs existants
+                const newButton = deselectAllParticipating.cloneNode(true);
+                deselectAllParticipating.parentNode.replaceChild(newButton, deselectAllParticipating);
+                
+                // Ajouter le nouvel écouteur
+                document.getElementById('deselect-all-participating').addEventListener('click', function() {
+                    console.log("Désélection de toutes les plateformes participantes");
+                    
+                    document.querySelectorAll('#participating-platforms input').forEach(checkbox => {
+                        checkbox.checked = false;
+                        const platform = checkbox.getAttribute('data-platform');
+                        state.selectedPlatforms = state.selectedPlatforms.filter(p => p !== platform);
+                    });
+                    
+                    updateGraph();
+                });
+            }
+            
+            // Sélection des plateformes non participantes
+            const selectAllNonParticipating = document.getElementById('select-all-non-participating');
+            const deselectAllNonParticipating = document.getElementById('deselect-all-non-participating');
+            
+            if (selectAllNonParticipating) {
+                // Supprimer les écouteurs existants
+                const newButton = selectAllNonParticipating.cloneNode(true);
+                selectAllNonParticipating.parentNode.replaceChild(newButton, selectAllNonParticipating);
+                
+                // Ajouter le nouvel écouteur
+                document.getElementById('select-all-non-participating').addEventListener('click', function() {
+                    console.log("Sélection de toutes les plateformes non participantes");
+                    
+                    document.querySelectorAll('#non-participating-platforms input').forEach(checkbox => {
+                        checkbox.checked = true;
+                        const platform = checkbox.getAttribute('data-platform');
+                        if (!state.selectedPlatforms.includes(platform)) {
+                            state.selectedPlatforms.push(platform);
+                        }
+                    });
+                    
+                    updateGraph();
+                });
+            }
+            
+            if (deselectAllNonParticipating) {
+                // Supprimer les écouteurs existants
+                const newButton = deselectAllNonParticipating.cloneNode(true);
+                deselectAllNonParticipating.parentNode.replaceChild(newButton, deselectAllNonParticipating);
+                
+                // Ajouter le nouvel écouteur
+                document.getElementById('deselect-all-non-participating').addEventListener('click', function() {
+                    console.log("Désélection de toutes les plateformes non participantes");
+                    
+                    document.querySelectorAll('#non-participating-platforms input').forEach(checkbox => {
+                        checkbox.checked = false;
+                        const platform = checkbox.getAttribute('data-platform');
+                        state.selectedPlatforms = state.selectedPlatforms.filter(p => p !== platform);
+                    });
+                    
+                    updateGraph();
+                });
+            }
+            
+            // Réinitialiser le bouton de période
+            const resetButton = document.getElementById('reset-period');
+            if (resetButton) {
+                // Supprimer les écouteurs existants
+                const newButton = resetButton.cloneNode(true);
+                resetButton.parentNode.replaceChild(newButton, resetButton);
+                
+                // Ajouter le nouvel écouteur
+                document.getElementById('reset-period').addEventListener('click', function() {
+                    console.log("Réinitialisation de la période");
+                    
+                    if (periodSlider) {
+                        periodSlider.set([2021, 2024]);
+                        updateGraph();
+                    } else {
+                        console.error("Le slider de période n'est pas initialisé");
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour calculer les données d'évolution pour la période sélectionnée
+        function calculateEvolutionForPeriod() {
+            console.log("Calcul des données d'évolution pour la période", state.startYear, "-", state.endYear);
+            const result = [];
+            
+            // Si les années sont identiques, on ne peut pas calculer d'évolution
+            if (state.startYear === state.endYear) {
+                console.log("Années identiques, pas d'évolution à calculer");
+                return result;
+            }
+            
+            console.log("Plateformes sélectionnées:", state.selectedPlatforms);
+            
+            // Pour chaque plateforme sélectionnée
+            state.selectedPlatforms.forEach(platform => {
+                // Vérifier si la période sélectionnée est couverte par une évolution totale
+                const totalEvol = total_evolution.find(item => 
+                    item.plateforme === platform && 
+                    item.premiere_annee === state.startYear && 
+                    item.derniere_annee === state.endYear
+                );
+                
+                if (totalEvol) {
+                    console.log(`Évolution totale trouvée pour ${platform}:`, totalEvol);
+                    // Si on a déjà une évolution calculée pour la période exacte
+                    result.push({
+                        plateforme: platform,
+                        de_annee: state.startYear,
+                        a_annee: state.endYear,
+                        evol_duree_pct: totalEvol.evol_totale_duree_pct,
+                        evol_attente_pct: totalEvol.evol_totale_attente_pct,
+                        evol_revenu_horaire_brut_pct: totalEvol.evol_totale_revenu_horaire_brut_pct,
+                        evol_revenu_horaire_ajuste_pct: totalEvol.evol_totale_revenu_horaire_ajuste_pct
+                    });
+                } else {
+                    console.log(`Pas d'évolution totale pour ${platform}, recherche d'évolutions annuelles`);
+                    // Sinon, il faut combiner les évolutions annuelles
+                    const relevantYearlyEvols = yearly_evolution_vtc.filter(item => 
+                        item.plateforme === platform && 
+                        item.de_annee >= state.startYear && 
+                        item.a_annee <= state.endYear
+                    );
+                    
+                    console.log(`Évolutions annuelles pour ${platform}:`, relevantYearlyEvols);
+                    
+                    // Si on a au moins une évolution annuelle pertinente
+                    if (relevantYearlyEvols.length > 0) {
+                        // Calculer l'évolution cumulée sur toutes les périodes
+                        let totalDureePct = 0;
+                        let totalAttentePct = 0;
+                        let totalRevHorBrutPct = 0;
+                        let totalRevHorAjustePct = 0;
+                        
+                        // Évolution composée
+                        relevantYearlyEvols.forEach(evol => {
+                            totalDureePct = (1 + totalDureePct / 100) * (1 + (evol.evol_duree_pct || 0) / 100) * 100 - 100;
+                            totalAttentePct = (1 + totalAttentePct / 100) * (1 + (evol.evol_attente_pct || 0) / 100) * 100 - 100;
+                            totalRevHorBrutPct = (1 + totalRevHorBrutPct / 100) * (1 + (evol.evol_revenu_horaire_brut_pct || 0) / 100) * 100 - 100;
+                            totalRevHorAjustePct = (1 + totalRevHorAjustePct / 100) * (1 + (evol.evol_revenu_horaire_ajuste_pct || 0) / 100) * 100 - 100;
+                        });
+                        
+                        console.log(`Évolution composée calculée pour ${platform}:`, {
+                            duree: totalDureePct,
+                            attente: totalAttentePct,
+                            revHorBrut: totalRevHorBrutPct,
+                            revHorAjuste: totalRevHorAjustePct
+                        });
+                        
+                        result.push({
+                            plateforme: platform,
+                            de_annee: state.startYear,
+                            a_annee: state.endYear,
+                            evol_duree_pct: totalDureePct,
+                            evol_attente_pct: totalAttentePct,
+                            evol_revenu_horaire_brut_pct: totalRevHorBrutPct,
+                            evol_revenu_horaire_ajuste_pct: totalRevHorAjustePct
+                        });
+                    }
+                }
+            });
+            
+            console.log("Résultat final du calcul d'évolution:", result);
+            return result;
+        }
+        
+        // Fonction pour afficher les données brutes en cas d'échec
+        function showRawData() {
+            console.log("Affichage des données brutes");
+            const evolutionData = calculateEvolutionForPeriod();
+            const graphContainer = document.getElementById('graph-container');
+            
+            if (evolutionData.length === 0) {
+                graphContainer.innerHTML = '<div style="text-align:center; padding:20px;">Aucune donnée disponible pour cette période.</div>';
+                return;
+            }
+            
+            // Créer un tableau HTML avec les données
+            let tableHTML = '<div style="padding:20px;"><h3>Données brutes d\'évolution</h3>';
+            tableHTML += '<div class="data-table-container">';
+            tableHTML += '<table>';
+            tableHTML += '<thead><tr><th>Plateforme</th><th>Période</th><th>Évolution Durée (%)</th><th>Évolution Temps d\'attente (%)</th><th>Évolution Revenu Horaire Brut (%)</th><th>Évolution Revenu Horaire Ajusté (%)</th></tr></thead>';
+            tableHTML += '<tbody>';
+            
+            evolutionData.forEach(item => {
+                tableHTML += `<tr>
+                    <td>${item.plateforme}</td>
+                    <td>${item.de_annee || state.startYear} - ${item.a_annee || state.endYear}</td>
+                    <td>${item.evol_duree_pct !== null ? item.evol_duree_pct.toFixed(2) : 'N/A'}</td>
+                    <td>${item.evol_attente_pct !== null ? item.evol_attente_pct.toFixed(2) : 'N/A'}</td>
+                    <td>${item.evol_revenu_horaire_brut_pct !== null ? item.evol_revenu_horaire_brut_pct.toFixed(2) : 'N/A'}</td>
+                    <td>${item.evol_revenu_horaire_ajuste_pct !== null ? item.evol_revenu_horaire_ajuste_pct.toFixed(2) : 'N/A'}</td>
+                </tr>`;
+            });
+            
+            tableHTML += '</tbody>';
+            tableHTML += '</table>';
+            tableHTML += '</div>';
+            tableHTML += '<div style="text-align:center; margin-top: 10px;">';
+            tableHTML += '<button id="return-to-graph" class="secondary">Retour au graphique</button>';
+            tableHTML += '<button id="export-csv">Exporter en CSV</button>';
+            tableHTML += '</div>';
+            tableHTML += '</div>';
+            
+            // Supprimer le bouton tableau s'il existe
+            const tableButton = document.getElementById('view-table-btn');
+            if (tableButton) {
+                tableButton.remove();
+            }
+            
+            graphContainer.innerHTML = tableHTML;
+            
+            // Ajouter l'événement au bouton de retour
+            document.getElementById('return-to-graph').addEventListener('click', function() {
+                try {
+                    // Réinitialiser l'état du graphique
+                    const graph = document.getElementById('graph-container');
+                    graph.innerHTML = '<div id="loading-message" style="text-align:center; padding:20px;">Chargement du graphique...</div>';
+                    
+                    // Mettre à jour le graphique avec un court délai pour assurer le changement d'affichage
+                    setTimeout(function() {
+                        try {
+                            updateGraph();
+                            // S'assurer que le message de chargement est supprimé
+                            const loadingMessage = document.getElementById('loading-message');
+                            if (loadingMessage) {
+                                loadingMessage.remove();
+                            }
+                        } catch (error) {
+                            console.error("Erreur lors de la mise à jour du graphique:", error);
+                            createSimpleChart();
+                        }
+                    }, 100);
+                } catch (error) {
+                    console.error("Erreur lors du retour au graphique:", error);
+                    graphContainer.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Erreur lors du retour au graphique. Veuillez rafraîchir la page.</div>';
+                }
+            });
+            
+            // Ajouter l'événement au bouton d'export CSV
+            document.getElementById('export-csv').addEventListener('click', function() {
+                exportToCSV(evolutionData);
+            });
+        }
+        
+        // Fonction simplifiée pour créer un graphique basique en cas d'échec
+        function createSimpleChart() {
+            console.log("Création d'un graphique simple");
+            const evolutionData = calculateEvolutionForPeriod();
+            
+            if (evolutionData.length === 0) {
+                graphContainer.innerHTML = '<div style="text-align:center; padding:20px;">Aucune donnée disponible pour cette période.</div>';
+                return;
+            }
+            
+            // Trier par l'évolution du revenu horaire ajusté
+            evolutionData.sort((a, b) => a.evol_revenu_horaire_ajuste_pct - b.evol_revenu_horaire_ajuste_pct);
+            
+            // Créer un graphique à barres simple en HTML + CSS
+            let chartHTML = '<div style="padding:20px; font-family: Marianne, Arial, sans-serif;"><h3>Évolution des indicateurs VTC</h3>';
+            chartHTML += '<div style="display:flex; gap:20px; margin-bottom:10px;">';
+            
+            const selectedDisplayMetrics = state.compareMetrics 
+                ? ['revenu_horaire_ajuste_pct', 'revenu_horaire_brut_pct', 'duree_pct', 'attente_pct'] 
+                : (state.multipleMetrics ? selectedMetrics : [state.selectedMetric]);
+            
+            // Légende des couleurs
+            selectedDisplayMetrics.forEach(metricName => {
+                let color;
+                if (metricName === 'revenu_horaire_ajuste_pct') {
+                    color = '#2ca02c'; // Vert
+                } else if (metricName === 'revenu_horaire_brut_pct') {
+                    color = '#1f77b4'; // Bleu
+                } else if (metricName === 'duree_pct') {
+                    color = '#ff7f0e'; // Orange
+                } else {
+                    color = '#9467bd'; // Violet
+                }
+                
+                chartHTML += `<div style="display:flex; align-items:center;">
+                    <span style="width:15px; height:15px; background-color:${color}; margin-right:5px;"></span>
+                    ${metricNames[metricName]}
+                </div>`;
+            });
+            
+            chartHTML += '</div>';
+            
+            // Calculer la valeur maximale pour l'échelle
+            const allValues = [];
+            selectedDisplayMetrics.forEach(metricName => {
+                const metricKey = translateMetricKey(metricName);
+                allValues.push(...evolutionData.map(d => Math.abs(d[metricKey])));
+            });
+            
+            const maxValue = Math.max(...allValues);
+            const scale = 100 / maxValue; // Échelle pour que la barre la plus longue fasse 100%
+            
+            evolutionData.forEach(item => {
+                chartHTML += `<div style="margin-bottom:20px;">
+                    <div style="font-weight:bold;">${item.plateforme} (${item.de_annee || state.startYear} - ${item.a_annee || state.endYear})</div>`;
+                
+                selectedDisplayMetrics.forEach(metricName => {
+                    const metricKey = translateMetricKey(metricName);
+                    const value = item[metricKey];
+                    const displayWidth = Math.abs(value * scale);
+                    const valueDir = value >= 0 ? 'right' : 'left';
+                    
+                    let color;
+                    if (metricName === 'revenu_horaire_ajuste_pct') {
+                        color = '#2ca02c'; // Vert
+                    } else if (metricName === 'revenu_horaire_brut_pct') {
+                        color = '#1f77b4'; // Bleu
+                    } else if (metricName === 'duree_pct') {
+                        color = '#ff7f0e'; // Orange
+                    } else {
+                        color = '#9467bd'; // Violet
+                    }
+                    
+                    chartHTML += `
+                    <div style="display:flex; align-items:center; height:20px; margin-top:5px;">
+                        <div style="width:150px; text-align:right; padding-right:10px;">${metricNames[metricName]}</div>
+                        <div style="position:relative; width:300px; height:20px; background-color:#f0f0f0;">
+                            <div style="position:absolute; top:0; ${valueDir}:50%; width:${displayWidth}%; height:100%; background-color:${color};"></div>
+                            <div style="position:absolute; top:0; left:50%; width:1px; height:100%; background-color:#000;"></div>
+                        </div>
+                        <div style="margin-left:10px;">${value.toFixed(2)}%</div>
+                    </div>`;
+                });
+                
+                chartHTML += '</div>';
+            });
+            
+            chartHTML += '<div style="text-align:center;">';
+            chartHTML += '<button id="show-table" style="margin:20px 10px; padding:10px 15px; background-color:#000091; color:white; border:none; border-radius:4px; cursor:pointer; font-family: Marianne, Arial, sans-serif;">Voir les données en tableau</button>';
+            chartHTML += '</div>';
+            
+            graphContainer.innerHTML = chartHTML;
+            
+            // Ajouter l'événement au bouton
+            document.getElementById('show-table').addEventListener('click', function() {
+                showRawData();
+            });
+        }
+        
+        // Fonction pour créer ou mettre à jour le graphique
+        function updateGraph() {
+            console.log("Mise à jour du graphique avec l'état:", state);
+            console.log("Métriques sélectionnées:", selectedMetrics);
+            
+            // Vérifier si Plotly est disponible
+            if (typeof Plotly === 'undefined') {
+                console.error("Plotly n'est pas chargé !");
+                // Si Plotly n'est pas disponible, afficher un graphique simple
+                createSimpleChart();
+                return;
+            }
+
+            try {
+                // Calculer les données d'évolution pour la période sélectionnée
+                const evolutionData = calculateEvolutionForPeriod();
+                console.log("Données d'évolution calculées:", evolutionData);
+                
+                if (evolutionData.length === 0) {
+                    graphContainer.innerHTML = '<div style="text-align:center; padding:100px; color:#666;">Aucune donnée disponible pour cette période.</div>';
+                    return;
+                }
+                
+                // Déterminer quelle métrique utiliser en fonction de l'état
+                let metricKey;
+                if (state.compareMetrics || state.multipleMetrics) {
+                    metricKey = 'evol_revenu_horaire_ajuste_pct'; // Tri par défaut en mode comparaison ou multiple
+                } else {
+                    // En mode simple, utiliser la métrique sélectionnée
+                    metricKey = translateMetricKey(state.selectedMetric);
+                }
+                
+                console.log("Clé de métrique pour le tri:", metricKey);
+                evolutionData.sort((a, b) => a[metricKey] - b[metricKey]);
+                
+                // Préparer les traces pour le graphique
+                const traces = [];
+                
+                // Les plateformes triées
+                const platforms = evolutionData.map(item => item.plateforme);
+                console.log("Plateformes triées:", platforms);
+                
+                // Préparation de l'infobulle personnalisée améliorée (template)
+                const hoverTemplate = '<span style="font-family: Marianne, sans-serif; font-size: 14px; color: #333;"><b>%{y}</b><br>' +
+                                     '%{customdata[0]}: %{x:.2f}%<br>' +
+                                     'Période: %{customdata[1]} - %{customdata[2]}<br><br>' +
+                                     '<b>Valeurs année de début (%{customdata[1]}):</b><br>' +
+                                     '%{customdata[3]}<br><br>' +
+                                     '<b>Valeurs année de fin (%{customdata[2]}):</b><br>' +
+                                     '%{customdata[4]}' +
+                                     '</span><extra></extra>';
+                
+                // Fonction pour préparer les données d'infobulle
+                function prepareCustomData(item, currentMetric) {
+                    const startYear = item.de_annee || state.startYear;
+                    const endYear = item.a_annee || state.endYear;
+                    
+                    // Déterminer quelle métrique afficher
+                    let metricToDisplay;
+                    let startValue = '';
+                    let endValue = '';
+                    
+                    // Utiliser la métrique passée en paramètre si disponible (pour les modes comparaison/multiple)
+                    // sinon utiliser la métrique sélectionnée
+                    const metricToUse = currentMetric || state.selectedMetric;
+                    const displayMetric = translateDisplayMetric(translateMetricKey(metricToUse));
+                    metricToDisplay = metricNames[displayMetric];
+                    
+                    // Récupérer les valeurs des années de début et de fin
+                    const startDetails = getPlatformDetails(item.plateforme, startYear);
+                    const endDetails = getPlatformDetails(item.plateforme, endYear);
+                    
+                    // Préparer les infos sur les valeurs selon la métrique
+                    if (metricToUse === 'duree_pct' || metricToUse === 'evol_duree_pct') {
+                        startValue = `Durée: ${startDetails ? startDetails.duree_moyenne : 'N/A'} min`;
+                        endValue = `Durée: ${endDetails ? endDetails.duree_moyenne : 'N/A'} min`;
+                    } else if (metricToUse === 'revenu_horaire_brut_pct' || metricToUse === 'evol_revenu_horaire_brut_pct') {
+                        startValue = `Revenu horaire nominal: ${startDetails ? startDetails.revenu_horaire_brut : 'N/A'} €`;
+                        endValue = `Revenu horaire nominal: ${endDetails ? endDetails.revenu_horaire_brut : 'N/A'} €`;
+                    } else if (metricToUse === 'revenu_horaire_ajuste_pct' || metricToUse === 'evol_revenu_horaire_ajuste_pct') {
+                        startValue = `Revenu horaire ajusté: ${startDetails ? startDetails.revenu_horaire_ajuste : 'N/A'} €`;
+                        endValue = `Revenu horaire ajusté: ${endDetails ? endDetails.revenu_horaire_ajuste : 'N/A'} €`;
+                    } else if (metricToUse === 'attente_pct' || metricToUse === 'evol_attente_pct') {
+                        startValue = `Temps d'attente: ${startDetails && startDetails.temps_attente ? startDetails.temps_attente : 'N/A'} min`;
+                        endValue = `Temps d'attente: ${endDetails && endDetails.temps_attente ? endDetails.temps_attente : 'N/A'} min`;
+                    }
+                    
+                    return [
+                        metricToDisplay,
+                        startYear,
+                        endYear,
+                        startValue,
+                        endValue
+                    ];
+                }
+                
+                if (state.compareMetrics) {
+                    // Mode comparaison : afficher toutes les métriques pour chaque plateforme
+                    const metrics = ['evol_revenu_horaire_ajuste_pct', 'evol_revenu_horaire_brut_pct', 'evol_duree_pct', 'evol_attente_pct'];
+                    
+                    metrics.forEach(metric => {
+                        const values = evolutionData.map(item => item[metric]);
+                        
+                        // Déterminer la couleur en fonction de la métrique
+                        let color;
+                        if (metric === 'evol_revenu_horaire_ajuste_pct') {
+                            color = '#2ca02c'; // Vert
+                        } else if (metric === 'evol_revenu_horaire_brut_pct') {
+                            color = '#1f77b4'; // Bleu
+                        } else if (metric === 'evol_duree_pct') {
+                            color = '#ff7f0e'; // Orange
+                        } else {
+                            color = '#9467bd'; // Violet
+                        }
+                        
+                        const displayMetric = translateDisplayMetric(metric);
+                        
+                        // Préparation des données personnalisées pour l'infobulle
+                        const customData = evolutionData.map(item => {
+                            return prepareCustomData(item, displayMetric);
+                        });
+                        
+                        traces.push({
+                            x: values,
+                            y: platforms,
+                            name: metricNames[displayMetric],
+                            type: 'bar',
+                            orientation: 'h',
+                            marker: {
+                                color: color
+                            },
+                            customdata: customData,
+                            hovertemplate: hoverTemplate
+                        });
+                    });
+                } else if (state.multipleMetrics) {
+                    // Mode sélection multiple : afficher les métriques sélectionnées
+                    selectedMetrics.forEach(metricName => {
+                        const metric = translateMetricKey(metricName);
+                        const values = evolutionData.map(item => item[metric]);
+                        
+                        // Déterminer la couleur en fonction de la métrique
+                        let color;
+                        if (metric === 'evol_revenu_horaire_ajuste_pct') {
+                            color = '#2ca02c'; // Vert
+                        } else if (metric === 'evol_revenu_horaire_brut_pct') {
+                            color = '#1f77b4'; // Bleu
+                        } else if (metric === 'evol_duree_pct') {
+                            color = '#ff7f0e'; // Orange
+                        } else {
+                            color = '#9467bd'; // Violet
+                        }
+                        
+                        const displayMetric = translateDisplayMetric(metric);
+                        
+                        // Préparation des données personnalisées pour l'infobulle
+                        const customData = evolutionData.map(item => {
+                            return prepareCustomData(item, metricName);
+                        });
+                        
+                        traces.push({
+                            x: values,
+                            y: platforms,
+                            name: metricNames[displayMetric],
+                            type: 'bar',
+                            orientation: 'h',
+                            marker: {
+                                color: color
+                            },
+                            customdata: customData,
+                            hovertemplate: hoverTemplate
+                        });
+                    });
+                } else {
+                    // Mode simple : afficher seulement la métrique sélectionnée
+                    const actualMetricKey = translateMetricKey(state.selectedMetric);
+                    const values = evolutionData.map(item => item[actualMetricKey]);
+                    console.log(`Valeurs pour ${actualMetricKey}:`, values);
+                    
+                    // Utiliser les couleurs spécifiques des plateformes
+                    const colors = platforms.map(platform => colors_vtc[platform] || '#000000');
+                    
+                    // Préparation des données personnalisées pour l'infobulle avec valeurs d'années
+                    const customData = evolutionData.map(item => {
+                        return prepareCustomData(item);
+                    });
+                    
+                    traces.push({
+                        x: values,
+                        y: platforms,
+                        type: 'bar',
+                        orientation: 'h',
+                        marker: {
+                            color: colors
+                        },
+                        customdata: customData,
+                        hovertemplate: hoverTemplate
+                    });
+                }
+
+                // Si nous avons des problèmes avec Plotly, afficher les données en mode basique
+                if (!Plotly || typeof Plotly.newPlot !== 'function') {
+                    console.error("Objet Plotly invalide ou fonction newPlot manquante");
+                    createSimpleChart();
+                    return;
+                }
+                
+                // Déterminer le titre du graphique
+                let titleText;
+                if (state.compareMetrics) {
+                    titleText = `<b>Évolution des indicateurs (${state.startYear}-${state.endYear})</b>`;
+                } else if (state.multipleMetrics) {
+                    titleText = `<b>Évolution des indicateurs sélectionnés (${state.startYear}-${state.endYear})</b>`;
+                } else {
+                    const displayMetric = translateDisplayMetric(translateMetricKey(state.selectedMetric));
+                    titleText = `<b>Évolution du ${metricNames[displayMetric].toLowerCase()} (${state.startYear}-${state.endYear})</b>`;
+                }
+                
+                // Configuration du layout
+                const layout = {
+                    title: {
+                        text: titleText,
+                        font: {
+                            size: 18,
+                            family: 'Marianne, Arial, sans-serif',
+                            color: '#000091'
+                        },
+                        x: 0.5,
+                        xanchor: 'center'
+                    },
+                    barmode: 'group',
+                    bargap: 0.15,
+                    bargroupgap: 0.1,
+                    legend: {
+                        orientation: 'h',
+                        y: -0.15,
+                        x: 0.5,
+                        xanchor: 'center',
+                        yanchor: 'top',
+                        bgcolor: 'rgba(255, 255, 255, 0.9)',
+                        bordercolor: 'rgba(50, 50, 50, 0.2)',
+                        borderwidth: 1,
+                        font: {
+                            family: 'Marianne, Arial, sans-serif'
+                        }
+                    },
+                    xaxis: {
+                        title: {
+                            text: 'Évolution (%)',
+                            font: {
+                                size: 14,
+                                family: 'Marianne, Arial, sans-serif'
+                            }
+                        },
+                        zeroline: true,
+                        zerolinewidth: 2,
+                        zerolinecolor: 'rgba(0, 0, 0, 0.3)',
+                        gridwidth: 1,
+                        gridcolor: 'rgba(0,0,0,0.05)',
+                        tickfont: {
+                            family: 'Marianne, Arial, sans-serif'
+                        }
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Plateforme',
+                            font: {
+                                size: 14,
+                                family: 'Marianne, Arial, sans-serif'
+                            }
+                        },
+                        automargin: true,
+                        tickfont: {
+                            family: 'Marianne, Arial, sans-serif'
+                        }
+                    },
+                    hoverlabel: {
+                        font: {
+                            family: 'Marianne, Arial, sans-serif'
+                        },
+                        bgcolor: 'white',
+                        bordercolor: '#ddd',
+                        namelength: -1
+                    },
+                    shapes: [{
+                        type: 'line',
+                        x0: 0,
+                        x1: 0,
+                        y0: -0.5,
+                        y1: platforms.length - 0.5,
+                        line: {
+                            color: 'rgba(0, 0, 0, 0.5)',
+                            width: 1,
+                            dash: 'dot'
+                        }
+                    }],
+                    margin: {
+                        l: 120,
+                        r: 30,
+                        t: 50,
+                        b: 100
+                    },
+                    autosize: true,
+                    plot_bgcolor: 'white',
+                    paper_bgcolor: 'white',
+                    height: Math.max(400, 100 + platforms.length * 40),
+                    hovermode: 'closest',
+                    font: {
+                        family: 'Marianne, Arial, sans-serif'
+                    }
+                };
+                
+                // Configuration
+                const config = {
+                    displaylogo: false,
+                    responsive: true,
+                    modeBarButtonsToRemove: ['select2d', 'lasso2d', 'sendDataToCloud'],
+                    toImageButtonOptions: {
+                        format: 'png',
+                        filename: 'evolution_vtc_' + state.startYear + '_' + state.endYear,
+                        scale: 2
+                    }
+                };
+
+                console.log("Tentative de création du graphique Plotly");
+                
+                try {
+                    // Essai avec la méthode standard
+                    Plotly.newPlot(graphContainer, traces, layout, config)
+                        .then(() => {
+                            console.log("Graphique créé avec succès");
+                            
+                            // Ajouter les événements Plotly seulement après création réussie
+                            graphContainer.on('plotly_legenddoubleclick', function() {
+                                return false; // Empêcher le comportement par défaut
+                            });
+                            
+                            graphContainer.on('plotly_legendclick', function(eventData) {
+                                const clickedTrace = eventData.curveNumber;
+                                const data = eventData.data;
+                                const tracesVisible = data.map(trace => trace.visible !== 'legendonly');
+                                
+                                // Si c'est le seul trace visible et qu'on clique dessus, tout montrer
+                                if (tracesVisible.filter(Boolean).length === 1 && tracesVisible[clickedTrace]) {
+                                    data.forEach(trace => trace.visible = true);
+                                    Plotly.redraw(graphContainer);
+                                    return false;
+                                }
+                                
+                                return true; // Comportement par défaut pour les autres cas
+                            });
+                            
+                            // Ajouter le bouton pour voir les données en tableau
+                            addTableViewButton();
+                        })
+                        .catch(error => {
+                            console.error("Erreur lors de la création du graphique:", error);
+                            createSimpleChart();
+                        });
+                } catch (error) {
+                    console.error("Exception lors de la création du graphique:", error);
+                    createSimpleChart();
+                }
+            } catch (error) {
+                console.error("Erreur générale dans updateGraph:", error);
+                createSimpleChart();
+            }
+        }
+        
+        // Fonction pour ajouter le bouton de visualisation en tableau
+        function addTableViewButton() {
+            // Vérifier si le bouton existe déjà
+            if (document.getElementById('view-table-btn')) {
+                return;
+            }
+            
+            // Créer le bouton
+            const tableButton = document.createElement('button');
+            tableButton.id = 'view-table-btn';
+            tableButton.innerHTML = 'Voir les données en tableau';
+            tableButton.className = 'control-btn';
+            tableButton.style.cssText = 'margin: 20px auto; display: block; padding: 10px 15px; background-color: #000091; color: white; border: none; border-radius: 4px; cursor: pointer; font-family: Marianne, Arial, sans-serif;';
+            
+            // Ajouter l'événement
+            tableButton.addEventListener('click', function() {
+                showRawData();
+            });
+            
+            // S'assurer qu'un bouton existant avec le même ID est supprimé
+            const existingButton = document.getElementById('view-table-btn');
+            if (existingButton) {
+                existingButton.remove();
+            }
+            
+            // Ajouter le bouton après le conteneur du graphique
+            const graphContainer = document.getElementById('graph-container');
+            if (graphContainer && graphContainer.parentNode) {
+                graphContainer.parentNode.insertBefore(tableButton, graphContainer.nextSibling);
+            }
+        }
+        
+        // Fonction pour exporter les données au format CSV
+        function exportToCSV(data) {
+            // Définir les en-têtes
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Plateforme,Période,Évolution Durée (%),Évolution Temps d'attente (%),Évolution Revenu Horaire Brut (%),Évolution Revenu Horaire Ajusté (%)\n";
+            
+            // Ajouter les données
+            data.forEach(item => {
+                const periode = `${item.de_annee || state.startYear}-${item.a_annee || state.endYear}`;
+                const dureePct = item.evol_duree_pct !== null ? item.evol_duree_pct.toFixed(2) : 'N/A';
+                const attentePct = item.evol_attente_pct !== null ? item.evol_attente_pct.toFixed(2) : 'N/A';
+                const revHorBrutPct = item.evol_revenu_horaire_brut_pct !== null ? item.evol_revenu_horaire_brut_pct.toFixed(2) : 'N/A';
+                const revHorAjustePct = item.evol_revenu_horaire_ajuste_pct !== null ? item.evol_revenu_horaire_ajuste_pct.toFixed(2) : 'N/A';
+                
+                const row = [
+                    item.plateforme,
+                    periode,
+                    dureePct,
+                    attentePct,
+                    revHorBrutPct,
+                    revHorAjustePct
+                ].join(',');
+                
+                csvContent += row + "\n";
+            });
+            
+            // Créer un lien de téléchargement
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `evolution_vtc_${state.startYear}_${state.endYear}.csv`);
+            document.body.appendChild(link);
+            
+            // Déclencher le téléchargement
+            link.click();
+            
+            // Nettoyer le DOM
+            document.body.removeChild(link);
+        }
+        
+        // Fonction utilitaire pour traduire le nom de la métrique en clé de données
+        function translateMetricKey(metricName) {
+            switch(metricName) {
+                case 'duree_pct':
+                    return 'evol_duree_pct';
+                case 'revenu_horaire_brut_pct':
+                    return 'evol_revenu_horaire_brut_pct';
+                case 'revenu_horaire_ajuste_pct':
+                    return 'evol_revenu_horaire_ajuste_pct';
+                case 'attente_pct':
+                    return 'evol_attente_pct';
+                default:
+                    // Si c'est déjà une clé complète, la retourner telle quelle
+                    if (metricName.startsWith('evol_')) {
+                        return metricName;
+                    }
+                    return 'evol_revenu_horaire_ajuste_pct'; // Par défaut
+            }
+        }
+        
+        // Fonction utilitaire pour traduire la clé de données en nom d'affichage
+        function translateDisplayMetric(metricKey) {
+            switch(metricKey) {
+                case 'evol_duree_pct':
+                    return 'duree_pct';
+                case 'evol_revenu_horaire_brut_pct':
+                    return 'revenu_horaire_brut_pct';
+                case 'evol_revenu_horaire_ajuste_pct':
+                    return 'revenu_horaire_ajuste_pct';
+                case 'evol_attente_pct':
+                    return 'attente_pct';
+                default:
+                    // Si c'est déjà un nom d'affichage, le retourner tel quel
+                    if (!metricKey.startsWith('evol_')) {
+                        return metricKey;
+                    }
+                    return 'revenu_horaire_ajuste_pct'; // Par défaut
+            }
+        }
+        
+        // Fonction pour obtenir les détails des valeurs d'une plateforme pour une année spécifique
+        function getPlatformDetails(platform, year) {
+            return resume_table_vtc.find(item => item.plateforme === platform && item.annee === parseInt(year));
+        }
+        
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM chargé, initialisation de l'application");
+            
+            try {
+                // Ajouter div pour les messages d'erreur
+                const errorContainer = document.createElement('div');
+                errorContainer.id = 'error-container';
+                errorContainer.style.color = 'red';
+                errorContainer.style.textAlign = 'center';
+                errorContainer.style.padding = '10px';
+                document.querySelector('.container').insertBefore(errorContainer, document.getElementById('graph-container'));
+                
+                // S'assurer que Plotly est chargé
+                if (typeof Plotly === 'undefined') {
+                    console.log("Plotly n'est pas chargé, chargement dynamique");
+                    errorContainer.innerHTML = 'Chargement de Plotly en cours...';
+                    
+                    // Si Plotly n'est pas chargé, charger dynamiquement
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.plot.ly/plotly-2.26.0.min.js';
+                    script.onload = function() {
+                        console.log('Plotly a été chargé avec succès');
+                        errorContainer.innerHTML = '';
+                        
+                        initPlatformCheckboxes();
+                        initPeriodSlider();
+                        initMetricButtons();
+                        initSelectionButtons();
+                        
+                        // Attendre un court instant pour s'assurer que tout est initialisé
+                        setTimeout(function() {
+                            try {
+                                updateGraph();
+                            } catch (error) {
+                                console.error("Erreur lors de l'initialisation du graphique:", error);
+                                createSimpleChart();
+                            }
+                        }, 300);
+                    };
+                    script.onerror = function() {
+                        console.error('Échec du chargement de Plotly');
+                        errorContainer.innerHTML = 'Erreur lors du chargement de Plotly. Affichage des données en mode simplifié.';
+                        setTimeout(function() {
+                            createSimpleChart();
+                        }, 300);
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    console.log('Plotly est déjà chargé');
+                    // Initialiser les composants
+                    initPlatformCheckboxes();
+                    initPeriodSlider();
+                    initMetricButtons();
+                    initSelectionButtons();
+                    
+                    // Attendre un court instant pour s'assurer que tout est initialisé
+                    setTimeout(function() {
+                        try {
+                            updateGraph();
+                        } catch (error) {
+                            console.error("Erreur lors de l'initialisation du graphique:", error);
+                            createSimpleChart();
+                        }
+                    }, 300);
+                }
+            } catch (error) {
+                console.error("Erreur générale lors de l'initialisation:", error);
+                // Créer un message d'erreur simple directement dans le graphContainer
+                document.getElementById('graph-container').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Une erreur est survenue lors de l\'initialisation. Affichage des données en mode simplifié.</div>';
+                setTimeout(function() {
+                    createSimpleChart();
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html> 
