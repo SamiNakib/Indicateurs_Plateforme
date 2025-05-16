@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord - Motifs de Suspension et Clôture</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0a5e87;
+            --secondary-color: #1a8bc5;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e0e0e0;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo img {
+            height: 60px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        .dashboard-title {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .dashboard-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background-color: var(--secondary-color);
+            margin: 10px auto 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            background-color: var(--card-background);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        label {
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .chart-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+        
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <!-- Logo placeholder - replace with actual logo -->
+                <img src="https://www.arpe.gouv.fr/themes/custom/general/logo.svg" alt="Logo ARPE">
+            </div>
+            <h1>Tableau de Bord - Motifs de Suspension et Clôture</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard-title">
+            <h2>Analyse des motifs de suspension et clôture par plateforme</h2>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="year-select">Année:</label>
+                <select id="year-select">
+                    <option value="all">Toutes les années</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="platform-select">Plateforme:</label>
+                <select id="platform-select">
+                    <option value="all">Toutes les plateformes</option>
+                    <option value="Uber_Eats">Uber Eats</option>
+                    <option value="Stuart">Stuart</option>
+                    <option value="Deliveroo">Deliveroo</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="type-select">Type:</label>
+                <select id="type-select">
+                    <option value="Totaux">Total</option>
+                    <option value="Suspension">Suspension</option>
+                    <option value="Clôture">Clôture</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Total des désactivations/suspensions</div>
+                <div class="stat-value" id="total-count">-</div>
+                <div class="stat-label">Cas reportés</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Motif le plus fréquent</div>
+                <div class="stat-value" id="top-reason">-</div>
+                <div class="stat-label">Des cas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Plateforme avec le plus de cas</div>
+                <div class="stat-value" id="top-platform">-</div>
+                <div class="stat-label">Des suspensions/clôtures</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-card">
+                <h3 class="chart-title">Répartition par motif</h3>
+                <div id="pie-chart" class="chart"></div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">Comparaison par plateforme</h3>
+                <div id="bar-chart" class="chart"></div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-card">
+                <h3 class="chart-title">Évolution 2023-2024</h3>
+                <div id="line-chart" class="chart"></div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">Proportion suspension vs clôture</h3>
+                <div id="stacked-bar-chart" class="chart"></div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="footer-content">
+            <p>© 2024 ARPE (Autorité des Relations des Plateformes d'Emploi) - Tous droits réservés</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Données des motifs de suspension et clôture
+        const data = {
+            '2023': {
+                'Motifs': [
+                    'Survenance d\'incident', 
+                    'Partage illicite de compte', 
+                    'Fraude', 
+                    'Mauvaise qualité des prestations réalisées',
+                    'Non-conformité des documents obligatoires pour l\'inscription sur la plateforme',
+                    'Autre motif ou motif inconnu'
+                ],
+                'Uber_Eats_Clôture': [229, 1653, 11121, 0, 0, 213],
+                'Uber_Eats_Suspension': [1046, 431, 40723, 0, 25229, 609],
+                'Uber_Eats_Totaux': [1275, 2084, 51844, 0, 25229, 822],
+                'Stuart_Clôture': [747, 2701, 2357, 1959, 3544, 32359],
+                'Stuart_Suspension': [0, 0, 0, 0, 0, 1748],
+                'Stuart_Totaux': [747, 2701, 2357, 1959, 3544, 34107],
+                'Deliveroo_Clôture': [146, 52, 1428, 1146, 4635, 71],
+                'Deliveroo_Suspension': [21, 0, 71, 1, 16631, 4],
+                'Deliveroo_Totaux': [167, 52, 1499, 1147, 21266, 75]
+            },
+            '2024': {
+                'Motifs': [
+                    'Survenance d\'incident', 
+                    'Partage illicite de compte', 
+                    'Fraude', 
+                    'Mauvaise qualité des prestations réalisées',
+                    'Non-conformité des documents obligatoires pour l\'inscription sur la plateforme',
+                    'Autre motif ou motif inconnu'
+                ],
+                'Uber_Eats_Clôture': [221, 1649, 10038, 0, 1, 3],
+                'Uber_Eats_Suspension': [1193, 167, 20583, 0, 11814, 1653],
+                'Uber_Eats_Totaux': [1414, 1816, 30621, 0, 11815, 1656],
+                'Stuart_Clôture': [29, 1325, 38, 416, 16, 230],
+                'Stuart_Suspension': [0, 0, 0, 0, 0, 3998],
+                'Stuart_Totaux': [29, 1325, 38, 416, 16, 4228],
+                'Deliveroo_Clôture': [56, 419, 869, 831, 6771, 1],
+                'Deliveroo_Suspension': [32, 0, 0, 0, 21716, 0],
+                'Deliveroo_Totaux': [88, 419, 869, 831, 28487, 1]
+            }
+        };
+        
+        // Labels plus courts pour les graphiques
+        const shortLabels = {
+            'Survenance d\'incident': 'Incident',
+            'Partage illicite de compte': 'Partage illicite',
+            'Fraude': 'Fraude',
+            'Mauvaise qualité des prestations réalisées': 'Mauvaise qualité',
+            'Non-conformité des documents obligatoires pour l\'inscription sur la plateforme': 'Non-conformité docs',
+            'Autre motif ou motif inconnu': 'Autre motif'
+        };
+        
+        // Couleurs pour les graphiques
+        const colors = [
+            '#FF9999', '#66B2FF', '#99FF99', '#FFCC99', '#FF99CC', '#99CCFF'
+        ];
+        
+        // Plateformes
+        const platforms = ['Uber_Eats', 'Stuart', 'Deliveroo'];
+        
+        // Années
+        const years = ['2023', '2024'];
+        
+        // Éléments DOM
+        const yearSelect = document.getElementById('year-select');
+        const platformSelect = document.getElementById('platform-select');
+        const typeSelect = document.getElementById('type-select');
+        const totalCount = document.getElementById('total-count');
+        const topReason = document.getElementById('top-reason');
+        const topPlatform = document.getElementById('top-platform');
+        
+        // Initialiser les graphiques
+        function initCharts() {
+            updateStats();
+            drawPieChart();
+            drawBarChart();
+            drawLineChart();
+            drawStackedBarChart();
+        }
+        
+        // Mettre à jour les graphiques lorsque les sélections changent
+        yearSelect.addEventListener('change', updateCharts);
+        platformSelect.addEventListener('change', updateCharts);
+        typeSelect.addEventListener('change', updateCharts);
+        
+        function updateCharts() {
+            updateStats();
+            drawPieChart();
+            drawBarChart();
+            drawLineChart();
+            drawStackedBarChart();
+        }
+        
+        // Mettre à jour les statistiques principales
+        function updateStats() {
+            const selectedYear = yearSelect.value;
+            const selectedPlatform = platformSelect.value;
+            const selectedType = typeSelect.value;
+            
+            let totalValue = 0;
+            let motifCounts = new Array(6).fill(0);
+            let platformCounts = [0, 0, 0]; // Uber_Eats, Stuart, Deliveroo
+            
+            // Calculer les totaux
+            for (const year of (selectedYear === 'all' ? years : [selectedYear])) {
+                for (const platform of (selectedPlatform === 'all' ? platforms : [selectedPlatform])) {
+                    const dataKey = `${platform}_${selectedType}`;
+                    const yearData = data[year][dataKey];
+                    
+                    // Additionner les valeurs pour chaque motif
+                    for (let i = 0; i < yearData.length; i++) {
+                        if (!isNaN(yearData[i])) {
+                            motifCounts[i] += yearData[i];
+                            totalValue += yearData[i];
+                            
+                            // Compter par plateforme
+                            if (platform === 'Uber_Eats') platformCounts[0] += yearData[i];
+                            else if (platform === 'Stuart') platformCounts[1] += yearData[i];
+                            else if (platform === 'Deliveroo') platformCounts[2] += yearData[i];
+                        }
+                    }
+                }
+            }
+            
+            // Trouver le motif le plus fréquent
+            let maxMotifIndex = 0;
+            for (let i = 1; i < motifCounts.length; i++) {
+                if (motifCounts[i] > motifCounts[maxMotifIndex]) {
+                    maxMotifIndex = i;
+                }
+            }
+            
+            // Trouver la plateforme avec le plus de cas
+            let maxPlatformIndex = 0;
+            for (let i = 1; i < platformCounts.length; i++) {
+                if (platformCounts[i] > platformCounts[maxPlatformIndex]) {
+                    maxPlatformIndex = i;
+                }
+            }
+            
+            // Mettre à jour les statistiques
+            totalCount.textContent = totalValue.toLocaleString('fr-FR');
+            topReason.textContent = shortLabels[data['2023'].Motifs[maxMotifIndex]];
+            topPlatform.textContent = platforms[maxPlatformIndex].replace('_', ' ');
+        }
+        
+        // Dessiner le graphique en camembert
+        function drawPieChart() {
+            const selectedYear = yearSelect.value;
+            const selectedPlatform = platformSelect.value;
+            const selectedType = typeSelect.value;
+            
+            let labels = [];
+            let values = [];
+            let title = 'Répartition par motif - ';
+            
+            if (selectedYear === 'all' && selectedPlatform === 'all') {
+                // Calcule la répartition générale
+                let motifCounts = new Array(6).fill(0);
+                for (const year of years) {
+                    for (const platform of platforms) {
+                        const dataKey = `${platform}_${selectedType}`;
+                        const yearData = data[year][dataKey];
+                        for (let i = 0; i < yearData.length; i++) {
+                            if (!isNaN(yearData[i])) {
+                                motifCounts[i] += yearData[i];
+                            }
+                        }
+                    }
+                }
+                
+                // Créer les labels et valeurs
+                labels = data['2023'].Motifs.map(motif => shortLabels[motif]);
+                values = motifCounts;
+                title += 'Toutes plateformes (2023-2024)';
+            } else if (selectedYear === 'all') {
+                // Calcule la répartition pour une plateforme spécifique
+                let motifCounts = new Array(6).fill(0);
+                for (const year of years) {
+                    const dataKey = `${selectedPlatform}_${selectedType}`;
+                    const yearData = data[year][dataKey];
+                    for (let i = 0; i < yearData.length; i++) {
+                        if (!isNaN(yearData[i])) {
+                            motifCounts[i] += yearData[i];
+                        }
+                    }
+                }
+                
+                // Créer les labels et valeurs
+                labels = data['2023'].Motifs.map(motif => shortLabels[motif]);
+                values = motifCounts;
+                title += `${selectedPlatform.replace('_', ' ')} (2023-2024)`;
+            } else if (selectedPlatform === 'all') {
+                // Calcule la répartition pour une année spécifique
+                let motifCounts = new Array(6).fill(0);
+                for (const platform of platforms) {
+                    const dataKey = `${platform}_${selectedType}`;
+                    const yearData = data[selectedYear][dataKey];
+                    for (let i = 0; i < yearData.length; i++) {
+                        if (!isNaN(yearData[i])) {
+                            motifCounts[i] += yearData[i];
+                        }
+                    }
+                }
+                
+                // Créer les labels et valeurs
+                labels = data['2023'].Motifs.map(motif => shortLabels[motif]);
+                values = motifCounts;
+                title += `Toutes plateformes (${selectedYear})`;
+            } else {
+                // Répartition pour une plateforme et une année spécifiques
+                const dataKey = `${selectedPlatform}_${selectedType}`;
+                const yearData = data[selectedYear][dataKey];
+                
+                // Créer les labels et valeurs
+                labels = data['2023'].Motifs.map(motif => shortLabels[motif]);
+                values = yearData;
+                title += `${selectedPlatform.replace('_', ' ')} (${selectedYear})`;
+            }
+            
+            // Filtrer les valeurs nulles ou vides
+            const validData = values.map((value, index) => ({
+                value: value || 0,
+                label: labels[index],
+                color: colors[index]
+            })).filter(item => item.value > 0);
+            
+            // Créer le graphique
+            const pieData = [{
+                values: validData.map(item => item.value),
+                labels: validData.map(item => item.label),
+                type: 'pie',
+                hole: 0.4,
+                marker: {
+                    colors: validData.map(item => item.color)
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside',
+                automargin: true
+            }];
+            
+            const layout = {
+                margin: { t: 30, b: 30, l: 30, r: 30 },
+                height: 400,
+                hovermode: 'closest',
+                showlegend: false
+            };
+            
+            Plotly.newPlot('pie-chart', pieData, layout);
+        }
+        
+        // Dessiner le graphique à barres
+        function drawBarChart() {
+            const selectedYear = yearSelect.value;
+            const selectedType = typeSelect.value;
+            
+            let traces = [];
+            
+            // Définir les données pour le graphique
+            if (selectedYear === 'all') {
+                // Créer un graphique comparant les plateformes sur les deux années
+                for (const platform of platforms) {
+                    const trace2023 = {
+                        x: data['2023'].Motifs.map(motif => shortLabels[motif]),
+                        y: data['2023'][`${platform}_${selectedType}`],
+                        name: `${platform.replace('_', ' ')} 2023`,
+                        type: 'bar',
+                        marker: {
+                            opacity: 0.7
+                        }
+                    };
+                    
+                    const trace2024 = {
+                        x: data['2024'].Motifs.map(motif => shortLabels[motif]),
+                        y: data['2024'][`${platform}_${selectedType}`],
+                        name: `${platform.replace('_', ' ')} 2024`,
+                        type: 'bar',
+                        marker: {
+                            opacity: 0.7
+                        }
+                    };
+                    
+                    traces.push(trace2023, trace2024);
+                }
+            } else {
+                // Créer un graphique pour une année spécifique
+                for (const platform of platforms) {
+                    const trace = {
+                        x: data[selectedYear].Motifs.map(motif => shortLabels[motif]),
+                        y: data[selectedYear][`${platform}_${selectedType}`],
+                        name: platform.replace('_', ' '),
+                        type: 'bar',
+                        marker: {
+                            opacity: 0.7
+                        }
+                    };
+                    
+                    traces.push(trace);
+                }
+            }
+            
+            const layout = {
+                margin: { t: 30, b: 80, l: 60, r: 30 },
+                height: 400,
+                barmode: 'group',
+                hovermode: 'closest',
+                xaxis: {
+                    tickangle: -45
+                },
+                yaxis: {
+                    title: 'Nombre de cas'
+                },
+                legend: {
+                    orientation: 'h',
+                    y: -0.2
+                }
+            };
+            
+            Plotly.newPlot('bar-chart', traces, layout);
+        }
+        
+        // Dessiner le graphique en ligne
+        function drawLineChart() {
+            const selectedPlatform = platformSelect.value;
+            const selectedType = typeSelect.value;
+            
+            let traces = [];
+            
+            if (selectedPlatform === 'all') {
+                // Créer un graphique pour toutes les plateformes
+                for (const platform of platforms) {
+                    const trace = {
+                        x: years,
+                        y: years.map(year => {
+                            // Calculer le total pour chaque année
+                            const yearData = data[year][`${platform}_${selectedType}`];
+                            return yearData.reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0);
+                        }),
+                        name: platform.replace('_', ' '),
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {
+                            width: 3
+                        },
+                        marker: {
+                            size: 10
+                        }
+                    };
+                    
+                    traces.push(trace);
+                }
+            } else {
+                // Créer un graphique pour une plateforme spécifique par motif
+                for (let i = 0; i < data['2023'].Motifs.length; i++) {
+                    const motif = data['2023'].Motifs[i];
+                    const trace = {
+                        x: years,
+                        y: years.map(year => {
+                            return data[year][`${selectedPlatform}_${selectedType}`][i] || 0;
+                        }),
+                        name: shortLabels[motif],
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {
+                            width: 3,
+                            color: colors[i]
+                        },
+                        marker: {
+                            size: 10,
+                            color: colors[i]
+                        }
+                    };
+                    
+                    traces.push(trace);
+                }
+            }
+            
+            const layout = {
+                margin: { t: 30, b: 50, l: 60, r: 30 },
+                height: 400,
+                hovermode: 'closest',
+                xaxis: {
+                    title: 'Année'
+                },
+                yaxis: {
+                    title: 'Nombre de cas'
+                },
+                legend: {
+                    orientation: 'h',
+                    y: -0.2
+                }
+            };
+            
+            Plotly.newPlot('line-chart', traces, layout);
+        }
+        
+        // Dessiner le graphique à barres empilées
+        function drawStackedBarChart() {
+            const selectedYear = yearSelect.value;
+            
+            let traces = [];
+            let xLabels = [];
+            
+            if (selectedYear === 'all') {
+                // Créer un graphique pour les deux années
+                xLabels = platforms.flatMap(platform => [
+                    `${platform.replace('_', ' ')} 2023`, 
+                    `${platform.replace('_', ' ')} 2024`
+                ]);
+                
+                const suspensionData = platforms.flatMap(platform => [
+                    data['2023'][`${platform}_Suspension`].reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0),
+                    data['2024'][`${platform}_Suspension`].reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0)
+                ]);
+                
+                const clotureData = platforms.flatMap(platform => [
+                    data['2023'][`${platform}_Clôture`].reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0),
+                    data['2024'][`${platform}_Clôture`].reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0)
+                ]);
+                
+                traces = [
+                    {
+                        x: xLabels,
+                        y: suspensionData,
+                        name: 'Suspension',
+                        type: 'bar',
+                        marker: {
+                            color: '#66B2FF'
+                        }
+                    },
+                    {
+                        x: xLabels,
+                        y: clotureData,
+                        name: 'Clôture',
+                        type: 'bar',
+                        marker: {
+                            color: '#FF9999'
+                        }
+                    }
+                ];
+            } else {
+                // Créer un graphique pour une année spécifique
+                xLabels = platforms.map(platform => platform.replace('_', ' '));
+                
+                const suspensionData = platforms.map(platform => 
+                    data[selectedYear][`${platform}_Suspension`].reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0)
+                );
+                
+                const clotureData = platforms.map(platform => 
+                    data[selectedYear][`${platform}_Clôture`].reduce((sum, val) => sum + (isNaN(val) ? 0 : val), 0)
+                );
+                
+                traces = [
+                    {
+                        x: xLabels,
+                        y: suspensionData,
+                        name: 'Suspension',
+                        type: 'bar',
+                        marker: {
+                            color: '#66B2FF'
+                        }
+                    },
+                    {
+                        x: xLabels,
+                        y: clotureData,
+                        name: 'Clôture',
+                        type: 'bar',
+                        marker: {
+                            color: '#FF9999'
+                        }
+                    }
+                ];
+            }
+            
+            const layout = {
+                margin: { t: 30, b: 50, l: 60, r: 30 },
+                height: 400,
+                barmode: 'stack',
+                hovermode: 'closest',
+                xaxis: {
+                    tickangle: -45
+                },
+                yaxis: {
+                    title: 'Nombre de cas'
+                },
+                legend: {
+                    orientation: 'h',
+                    y: -0.2
+                }
+            };
+            
+            Plotly.newPlot('stacked-bar-chart', traces, layout);
+        }
+        
+        // Initialiser les graphiques au chargement
+        window.addEventListener('load', initCharts);
+    </script>
+</body>
+</html> 
