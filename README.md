@@ -6,7 +6,9 @@ Ce projet contient deux tableaux de bord interactifs développés pour l'ARPE (A
 Les deux tableaux de bord disponibles sont :
 - **Tableau de bord VTC** (`evolution_interactive_vtc.html`) : Analyse des chauffeurs VTC (Voiture de Transport avec Chauffeur)
 - **Tableau de bord Livraison** (`evolution_interactive_livraison.html`) : Analyse des livreurs de repas et colis
-
+-> Lien d'accès : https://saminakib.github.io/Indicateurs_Plateforme/
+  -> VTC : https://saminakib.github.io/Indicateurs_Plateforme/evolution_interactive_vtc.html
+  -> Livraison : https://saminakib.github.io/Indicateurs_Plateforme/evolution_interactive_livraison.html
 ## Fonctionnalités
 Chaque tableau de bord propose les fonctionnalités suivantes :
 - **Filtrage par période**: Sélection d'une plage temporelle entre 2021 et 2024
